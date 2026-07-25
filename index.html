@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blues Jam Feedback — Sydney Blues Society</title>
+<style>
+:root {
+  --ink:    #1A1209;
+  --paper:  #F5EDD6;
+  --warm:   #EDE0C0;
+  --gold:   #C4930A;
+  --gold-lt:#F5C842;
+  --rust:   #8B3A1A;
+  --muted:  #6B5D45;
+  --border: #C8B890;
+  --success:#2D6A2D;
+  --danger: #8B1A1A;
+  --white:  #FFFDF7;
+  --radius: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  color: var(--ink);
+}
+.view { display: none; min-height: 100vh; }
+.view.active { display: block; }
+
+/* ── FEEDBACK FORM ── */
+#view-feedback {
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 20px 16px 40px; min-height: 100vh;
+}
+.form-card {
+  background: var(--paper); border-radius: 12px;
+  width: 100%; max-width: 420px; overflow: hidden;
+  border: 1.5px solid var(--border);
+}
+.form-header {
+  background: var(--ink); padding: 20px 20px 16px;
+  text-align: center; border-bottom: 3px solid var(--gold);
+}
+.form-header .logo-mark {
+  font-family: Georgia, serif; font-size: 11px;
+  letter-spacing: .2em; color: var(--gold); margin-bottom: 4px;
+}
+.form-header h1 {
+  font-family: Georgia, serif; font-size: 22px;
+  color: var(--paper); font-weight: normal;
+}
+.progress-bar { height: 3px; background: var(--warm); }
+.progress-fill { height: 100%; background: var(--gold); transition: width .35s ease; }
+.form-body { padding: 20px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.screen-title { font-family: Georgia, serif; font-size: 18px; color: var(--ink); margin-bottom: 4px; }
+.screen-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.step-dots { display: flex; gap: 5px; justify-content: center; margin-bottom: 18px; }
+.step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: all .2s; }
+.step-dot.done { background: var(--gold); opacity: .5; }
+.step-dot.active { background: var(--gold); width: 18px; border-radius: 3px; }
+
+/* jam grid */
+.jam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.jam-btn {
+  padding: 12px 10px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--white);
+  text-align: center; cursor: pointer; transition: all .15s;
+}
+.jam-btn:hover { border-color: var(--gold); }
+.jam-btn.sel { border-color: var(--gold); background: #FDF5DC; }
+.jam-btn .jname { font-size: 13px; font-weight: 500; color: var(--ink); }
+.jam-btn .jvenue { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.jam-btn .jtag {
+  display: inline-block; font-size: 10px; padding: 1px 6px;
+  border-radius: 10px; margin-top: 4px;
+  background: #E8F5E8; color: var(--success); font-weight: 500;
+}
+.jam-btn .jtag.one-off { background: #F5EAE0; color: var(--rust); }
+.loading-msg { text-align: center; padding: 20px; font-size: 13px; color: var(--muted); }
+
+/* stars */
+.star-row { display: flex; gap: 6px; justify-content: center; margin: 4px 0 6px; }
+.star { font-size: 36px; color: var(--border); cursor: pointer; line-height: 1; transition: color .1s; user-select: none; }
+.star.on { color: var(--gold); }
+.star-label { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 14px; min-height: 18px; }
+
+/* role */
+.role-row { display: flex; gap: 8px; margin-bottom: 18px; }
+.role-btn {
+  flex: 1; padding: 11px 6px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--white);
+  text-align: center; cursor: pointer; font-size: 13px; color: var(--muted); transition: all .15s;
+}
+.role-btn:hover { border-color: var(--gold); }
+.role-btn.sel { border-color: var(--gold); background: #FDF5DC; color: var(--ink); font-weight: 500; }
+.role-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* tags */
+.tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+.tag {
+  padding: 7px 13px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--white);
+  font-size: 13px; color: var(--muted); cursor: pointer; transition: all .15s; user-select: none;
+}
+.tag:hover { border-color: var(--gold); }
+.tag.sel { border-color: var(--gold); background: #FDF5DC; color: var(--ink); font-weight: 500; }
+.tag.neg.sel { border-color: var(--rust); background: #FDF0EA; color: var(--rust); }
+
+.field-label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+textarea {
+  width: 100%; font-family: inherit; font-size: 13px; padding: 10px;
+  border-radius: var(--radius); border: 1.5px solid var(--border);
+  background: var(--white); color: var(--ink); resize: none; line-height: 1.5; margin-bottom: 16px;
+}
+textarea:focus { outline: 2px solid var(--gold); border-color: transparent; }
+
+/* buttons */
+.btn {
+  width: 100%; padding: 13px; border-radius: var(--radius);
+  font-size: 15px; font-weight: 500; cursor: pointer; border: none;
+  transition: all .15s; display: block; text-align: center; font-family: inherit;
+}
+.btn-primary { background: var(--gold); color: var(--ink); }
+.btn-primary:hover { background: var(--gold-lt); }
+.btn-primary:disabled { opacity: .5; cursor: default; }
+.btn-ghost {
+  background: transparent; border: 1.5px solid var(--border);
+  color: var(--muted); margin-top: 8px;
+}
+.btn-ghost:hover { border-color: var(--muted); color: var(--ink); }
+
+/* thank you */
+.thankyou { text-align: center; padding: 30px 10px; }
+.ty-icon { font-size: 52px; margin-bottom: 12px; }
+.ty-title { font-family: Georgia, serif; font-size: 22px; color: var(--ink); margin-bottom: 8px; }
+.ty-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.ty-next { margin-top: 20px; font-size: 13px; color: var(--muted); }
+
+/* ── ADMIN ── */
+#view-admin { background: var(--ink); min-height: 100vh; }
+.admin-header {
+  background: var(--ink); border-bottom: 2px solid var(--gold);
+  padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.admin-logo { font-family: Georgia, serif; font-size: 14px; letter-spacing: .08em; color: var(--gold); }
+.admin-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-nav button {
+  padding: 6px 14px; border-radius: var(--radius); font-size: 13px;
+  cursor: pointer; font-family: inherit; border: 1.5px solid var(--border);
+  background: transparent; color: var(--paper); transition: all .15s;
+}
+.admin-nav button:hover, .admin-nav button.active {
+  background: var(--gold); color: var(--ink); border-color: var(--gold); font-weight: 500;
+}
+.admin-body { padding: 24px; max-width: 900px; margin: 0 auto; }
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+
+/* login */
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
+.login-card {
+  background: var(--paper); border-radius: 10px; padding: 32px 28px;
+  width: 100%; max-width: 340px; border: 1.5px solid var(--border); text-align: center;
+}
+.login-card h2 { font-family: Georgia, serif; font-size: 20px; margin-bottom: 6px; color: var(--ink); }
+.login-card p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.login-err { font-size: 12px; color: var(--danger); margin-bottom: 10px; min-height: 16px; }
+
+/* section headers */
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.section-head h2 { font-family: Georgia, serif; font-size: 20px; color: var(--paper); font-weight: normal; }
+
+/* inputs (admin) */
+.a-input {
+  width: 100%; padding: 9px 11px; border: 1.5px solid var(--border);
+  border-radius: var(--radius); font-size: 13px; font-family: inherit;
+  background: var(--white); color: var(--ink);
+}
+.a-input:focus { outline: 2px solid var(--gold); border-color: transparent; }
+select.a-input { cursor: pointer; }
+
+/* jam cards */
+.jam-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.jam-admin-card {
+  background: var(--paper); border-radius: var(--radius);
+  border: 1.5px solid var(--border); padding: 14px 16px;
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+}
+.jac-name { font-weight: 500; font-size: 15px; color: var(--ink); }
+.jac-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.jam-actions { display: flex; gap: 6px; }
+.jam-actions button {
+  padding: 5px 11px; border-radius: var(--radius); font-size: 12px;
+  cursor: pointer; font-family: inherit; border: 1.5px solid var(--border);
+  background: var(--white); color: var(--muted); transition: all .15s;
+}
+.jam-actions button:hover { color: var(--ink); border-color: var(--muted); }
+.jam-actions .del-btn:hover { color: var(--danger); border-color: var(--danger); }
+.jtype-badge {
+  display: inline-block; font-size: 10px; padding: 1px 7px;
+  border-radius: 10px; margin-left: 6px; font-weight: 500;
+  background: #E8F5E8; color: var(--success);
+}
+.jtype-badge.one-off { background: #F5EAE0; color: var(--rust); }
+
+/* add jam */
+.add-jam-panel {
+  background: var(--paper); border-radius: var(--radius);
+  border: 1.5px solid var(--gold); padding: 18px; margin-bottom: 16px;
+}
+.add-jam-panel h3 { font-family: Georgia, serif; font-size: 16px; margin-bottom: 14px; color: var(--ink); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-grid.full { grid-template-columns: 1fr; }
+.field-wrap label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+.panel-actions { display: flex; gap: 8px; margin-top: 12px; }
+.panel-actions button {
+  padding: 8px 18px; border-radius: var(--radius); font-size: 13px;
+  font-weight: 500; cursor: pointer; font-family: inherit;
+}
+.save-btn { background: var(--gold); color: var(--ink); border: none; }
+.save-btn:hover { background: var(--gold-lt); }
+.cancel-btn { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
+
+/* setup */
+.setup-card {
+  background: var(--paper); border-radius: var(--radius);
+  border: 1.5px solid var(--border); padding: 20px; max-width: 580px; margin-bottom: 20px;
+}
+.setup-card h3 { font-family: Georgia, serif; font-size: 17px; margin-bottom: 6px; color: var(--ink); }
+.setup-card p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+.setup-steps {
+  background: var(--warm); border-radius: var(--radius); padding: 14px 16px;
+  font-size: 13px; color: var(--muted); line-height: 1.9; margin-bottom: 16px;
+}
+.setup-steps strong { color: var(--ink); }
+.setup-steps code {
+  background: var(--border); padding: 1px 5px;
+  border-radius: 3px; font-family: monospace; font-size: 12px;
+}
+.status-banner {
+  border-radius: var(--radius); padding: 11px 14px;
+  font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.status-ok { background: #1A3D1A; border: 1px solid #3A6D3A; color: #9FDF9F; }
+.status-warn { background: #3D2D0A; border: 1px solid #6B4D1A; color: var(--gold-lt); }
+
+/* stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--paper); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 14px 16px; text-align: center; }
+.stat-num { font-family: Georgia, serif; font-size: 32px; color: var(--ink); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* report */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.filter-bar label { font-size: 13px; color: var(--paper); }
+.report-card { background: var(--paper); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 18px 20px; margin-bottom: 16px; }
+.report-card h3 { font-family: Georgia, serif; font-size: 17px; color: var(--ink); margin-bottom: 4px; }
+.report-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.stars-display { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.stars-display .s { font-size: 20px; color: var(--border); }
+.stars-display .s.on { color: var(--gold); }
+.stars-display .avg-num { font-family: Georgia, serif; font-size: 22px; color: var(--ink); }
+.stars-display .avg-count { font-size: 12px; color: var(--muted); }
+.role-chips { display: flex; gap: 10px; margin-bottom: 14px; }
+.role-chip { flex: 1; text-align: center; padding: 10px; border-radius: var(--radius); background: var(--warm); border: 1px solid var(--border); }
+.role-chip .rc-num { font-family: Georgia, serif; font-size: 22px; color: var(--ink); }
+.role-chip .rc-label { font-size: 11px; color: var(--muted); }
+.bar-section { margin-bottom: 14px; }
+.bar-section h4 { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+.bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.bar-label { font-size: 12px; color: var(--ink); width: 160px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 16px; background: var(--warm); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width .4s; }
+.bar-fill.neg { background: var(--rust); }
+.bar-count { font-size: 12px; color: var(--muted); width: 24px; text-align: right; }
+.comment-list { margin-top: 8px; }
+.comment-item {
+  padding: 9px 12px; border-left: 3px solid var(--border); margin-bottom: 7px;
+  font-size: 13px; color: var(--ink); background: var(--white);
+  border-radius: 0 var(--radius) var(--radius) 0; line-height: 1.5;
+}
+
+/* responses table */
+.resp-table-wrap { background: var(--paper); border-radius: var(--radius); border: 1.5px solid var(--border); overflow-x: auto; }
+.resp-table-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.resp-table-wrap th {
+  background: var(--warm); padding: 9px 12px; text-align: left;
+  font-weight: 500; color: var(--muted); font-size: 11px;
+  letter-spacing: .05em; text-transform: uppercase; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.resp-table-wrap td { padding: 9px 12px; border-bottom: 1px solid var(--warm); color: var(--ink); vertical-align: top; }
+.resp-table-wrap tr:last-child td { border-bottom: none; }
+.resp-table-wrap tr:hover td { background: #FDF5DC; }
+.star-inline { color: var(--gold); }
+
+/* empty */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-state .ei { font-size: 36px; margin-bottom: 10px; }
+.empty-state p { font-size: 14px; line-height: 1.6; }
+
+/* qr hint */
+.qr-hint {
+  background: var(--warm); border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 10px 14px; font-size: 12px; color: var(--muted); margin-bottom: 14px;
+}
+.qr-hint strong { color: var(--ink); }
+
+/* toast */
+.toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ink); color: var(--paper); border: 1px solid var(--gold);
+  padding: 10px 20px; border-radius: 20px; font-size: 13px;
+  transition: transform .3s ease; z-index: 999; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 600px) {
+  .admin-header { padding: 10px 14px; }
+  .admin-body { padding: 14px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .bar-label { width: 110px; font-size: 11px; }
+  .jam-admin-card { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ FEEDBACK FORM ══════════ -->
+<div class="view" id="view-feedback" style="display:flex">
+  <div style="width:100%;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px 40px;min-height:100vh">
+    <div class="form-card">
+      <div class="form-header">
+        <div class="logo-mark">Sydney Blues Society</div>
+        <h1>Blues Jam Feedback</h1>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="fb-progress" style="width:20%"></div></div>
+      <div class="form-body">
+
+        <!-- S1: Jam picker -->
+        <div class="screen active" id="fb-s1">
+          <h2 class="screen-title">Which jam did you attend?</h2>
+          <p class="screen-sub">Tap to select</p>
+          <div class="step-dots">
+            <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+          </div>
+          <div class="jam-grid" id="jam-picker">
+            <div class="loading-msg" style="grid-column:span 2">Loading jams…</div>
+          </div>
+          <button class="btn btn-primary" onclick="fbNext(2)">Next →</button>
+        </div>
+
+        <!-- S2: Rating + role -->
+        <div class="screen" id="fb-s2">
+          <h2 class="screen-title">How was the jam?</h2>
+          <p class="screen-sub">Overall rating</p>
+          <div class="step-dots">
+            <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+          </div>
+          <div class="star-row" id="fb-stars">
+            <span class="star" data-v="1" onclick="fbStar(1)">★</span>
+            <span class="star" data-v="2" onclick="fbStar(2)">★</span>
+            <span class="star" data-v="3" onclick="fbStar(3)">★</span>
+            <span class="star" data-v="4" onclick="fbStar(4)">★</span>
+            <span class="star" data-v="5" onclick="fbStar(5)">★</span>
+          </div>
+          <div class="star-label" id="fb-star-label"></div>
+          <label class="field-label" style="margin-bottom:8px">You were there as…</label>
+          <div class="role-row">
+            <div class="role-btn" onclick="fbRole(this,'Jammer')"><span class="role-icon">🎸</span>Jammer</div>
+            <div class="role-btn" onclick="fbRole(this,'Audience')"><span class="role-icon">👥</span>Audience</div>
+            <div class="role-btn" onclick="fbRole(this,'Both')"><span class="role-icon">🎶</span>Both</div>
+          </div>
+          <button class="btn btn-primary" onclick="fbNext(3)">Next →</button>
+          <button class="btn btn-ghost" onclick="fbGo(1)">Back</button>
+        </div>
+
+        <!-- S3: What worked -->
+        <div class="screen" id="fb-s3">
+          <h2 class="screen-title">What worked well?</h2>
+          <p class="screen-sub">Select all that apply — or skip ahead</p>
+          <div class="step-dots">
+            <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+          </div>
+          <div class="tag-row" id="tags-positive"></div>
+          <label class="field-label">Anything else that worked?</label>
+          <textarea id="fb-pos-text" rows="2" placeholder="Optional…"></textarea>
+          <button class="btn btn-primary" onclick="fbNext(4)">Next →</button>
+          <button class="btn btn-ghost" onclick="fbGo(2)">Back</button>
+        </div>
+
+        <!-- S4: To improve -->
+        <div class="screen" id="fb-s4">
+          <h2 class="screen-title">What could be better?</h2>
+          <p class="screen-sub">Select all that apply — or skip to submit</p>
+          <div class="step-dots">
+            <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+          </div>
+          <div class="tag-row" id="tags-negative"></div>
+          <label class="field-label">Anything else to improve?</label>
+          <textarea id="fb-neg-text" rows="2" placeholder="Optional…"></textarea>
+          <button class="btn btn-primary" id="submit-btn" onclick="fbSubmit()">Submit feedback →</button>
+          <button class="btn btn-ghost" onclick="fbGo(3)">Back</button>
+        </div>
+
+        <!-- S5: Thank you -->
+        <div class="screen" id="fb-s5">
+          <div class="thankyou">
+            <div class="ty-icon">🎸</div>
+            <h2 class="ty-title">Thanks for the feedback!</h2>
+            <p class="ty-body">It helps us make every jam better for players and audiences alike. See you at the next one.</p>
+            <div class="ty-next"><strong>Sydney Blues Society</strong></div>
+          </div>
+          <div style="text-align:center;padding:0 20px 16px">
+            <a href="#admin" onclick="showAdmin();return false;" style="font-size:11px;color:var(--muted);text-decoration:none">Admin ↗</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ADMIN VIEW ══════════ -->
+<div class="view" id="view-admin" style="display:none">
+  <div id="admin-login" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <div class="login-card">
+      <h2>Admin access</h2>
+      <p>Sydney Blues Society jam management</p>
+      <input type="password" id="admin-pw" class="a-input" placeholder="Passphrase" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')adminLogin()">
+      <div class="login-err" id="login-err"></div>
+      <button class="btn btn-primary" onclick="adminLogin()">Sign in</button>
+    </div>
+  </div>
+
+  <div id="admin-panel" style="display:none">
+    <div class="admin-header">
+      <div class="admin-logo">SBS · Jam Admin</div>
+      <div class="admin-nav">
+        <button class="active" onclick="adminTab('jams',this)">Manage jams</button>
+        <button onclick="adminTab('reports',this)">Reports</button>
+        <button onclick="adminTab('responses',this)">Responses</button>
+        <button onclick="adminTab('setup',this)">Setup</button>
+        <button onclick="adminLogout()" style="border-color:transparent;color:var(--muted)">Sign out</button>
+      </div>
+    </div>
+    <div class="admin-body">
+
+      <!-- JAMS TAB -->
+      <div class="admin-section active" id="tab-jams">
+        <div class="section-head">
+          <h2>Jam list</h2>
+          <button class="btn btn-primary" style="width:auto;padding:8px 16px;font-size:13px" onclick="toggleAddForm()">+ Add jam</button>
+        </div>
+        <div class="qr-hint">
+          💡 <strong>QR codes:</strong> each jam has its own link — copy it and generate a QR code at qr-code-generator.com. Print one card per venue.
+        </div>
+        <div id="add-jam-panel" style="display:none">
+          <div class="add-jam-panel">
+            <h3>Add a jam</h3>
+            <div class="form-grid">
+              <div class="field-wrap"><label>Jam name</label><input type="text" id="new-name" class="a-input" placeholder="eg: Fridayz at the Nag"></div>
+              <div class="field-wrap"><label>Venue</label><input type="text" id="new-venue" class="a-input" placeholder="eg: Nags Head Hotel"></div>
+            </div>
+            <div class="form-grid">
+              <div class="field-wrap">
+                <label>Type</label>
+                <select id="new-type" class="a-input">
+                  <option value="regular">Regular (weekly / fortnightly)</option>
+                  <option value="one-off">One-off / festival</option>
+                </select>
+              </div>
+              <div class="field-wrap"><label>Schedule or date</label><input type="text" id="new-schedule" class="a-input" placeholder="eg: Every Friday / 14 Jun 2026"></div>
+            </div>
+            <div class="panel-actions">
+              <button class="save-btn" onclick="saveJam()">Save jam</button>
+              <button class="cancel-btn" onclick="toggleAddForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="jam-list" id="admin-jam-list"></div>
+      </div>
+
+      <!-- REPORTS TAB -->
+      <div class="admin-section" id="tab-reports">
+        <div class="section-head"><h2>Reports</h2></div>
+        <div class="stats-grid" id="overall-stats"></div>
+        <div class="filter-bar">
+          <label>Jam:</label>
+          <select class="a-input" id="rpt-jam" onchange="renderReport()" style="width:auto"></select>
+          <label>Period:</label>
+          <select class="a-input" id="rpt-period" onchange="renderReport()" style="width:auto">
+            <option value="all">All time</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+        <div id="report-output"></div>
+      </div>
+
+      <!-- RESPONSES TAB -->
+      <div class="admin-section" id="tab-responses">
+        <div class="section-head"><h2>All responses</h2></div>
+        <div class="filter-bar">
+          <label>Jam:</label>
+          <select class="a-input" id="resp-jam" onchange="renderResponses()" style="width:auto"></select>
+        </div>
+        <div id="responses-output"></div>
+      </div>
+
+      <!-- SETUP TAB -->
+      <div class="admin-section" id="tab-setup">
+        <div class="section-head"><h2>Google Sheets setup</h2></div>
+        <div id="setup-status"></div>
+
+        <div class="setup-card">
+          <h3>Step 1 — Create your Google Sheet</h3>
+          <p>Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--gold)">sheets.google.com</a>, create a new sheet called <strong>SBS Jam Feedback</strong>, and add these column headers in row 1:</p>
+          <div class="setup-steps">
+            <code>Timestamp</code> &nbsp;|&nbsp; <code>Jam</code> &nbsp;|&nbsp; <code>Role</code> &nbsp;|&nbsp; <code>Rating</code> &nbsp;|&nbsp; <code>What Worked</code> &nbsp;|&nbsp; <code>To Improve</code> &nbsp;|&nbsp; <code>Comment Good</code> &nbsp;|&nbsp; <code>Comment Improve</code>
+          </div>
+        </div>
+
+        <div class="setup-card">
+          <h3>Step 2 — Add the Apps Script</h3>
+          <p>In your sheet go to <strong>Extensions → Apps Script</strong>. Delete everything and paste this code, then click Save (💾):</p>
+          <div class="setup-steps" style="font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.6">function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var type = e.parameter.type || 'response';
+
+  if (type === 'response') {
+    var sheet = ss.getSheetByName('Responses') || ss.getActiveSheet();
+    var d = JSON.parse(e.postData.contents);
+    sheet.appendRow([
+      d.timestamp, d.jam, d.role, d.rating,
+      d.whatWorked, d.toImprove, d.commentGood, d.commentImprove
+    ]);
+  }
+
+  if (type === 'saveJam') {
+    var js = ss.getSheetByName('Jams');
+    if (!js) { js = ss.insertSheet('Jams'); js.appendRow(['id','name','venue','type','schedule']); }
+    var d = JSON.parse(e.postData.contents);
+    js.appendRow([d.id, d.name, d.venue, d.type, d.schedule]);
+  }
+
+  if (type === 'deleteJam') {
+    var js = ss.getSheetByName('Jams');
+    if (!js) return ContentService.createTextOutput('OK');
+    var d = JSON.parse(e.postData.contents);
+    var rows = js.getDataRange().getValues();
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (rows[i][0] == d.id) { js.deleteRow(i + 1); break; }
+    }
+  }
+
+  return ContentService.createTextOutput('OK');
+}
+
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var type = e.parameter.type || 'jams';
+
+  if (type === 'jams') {
+    var js = ss.getSheetByName('Jams');
+    if (!js) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    var rows = js.getDataRange().getValues();
+    var jams = rows.slice(1).map(function(r){ return {id:r[0],name:r[1],venue:r[2],type:r[3],schedule:r[4]}; });
+    return ContentService.createTextOutput(JSON.stringify(jams)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (type === 'responses') {
+    var rs = ss.getSheetByName('Responses') || ss.getActiveSheet();
+    var rows = rs.getDataRange().getValues();
+    var resps = rows.slice(1).map(function(r){
+      return { timestamp:r[0], jam:r[1], role:r[2], rating:r[3],
+               whatWorked:r[4], toImprove:r[5], commentGood:r[6], commentImprove:r[7] };
+    });
+    var jamFilter = e.parameter.jam;
+    if (jamFilter && jamFilter !== 'all') resps = resps.filter(function(r){ return r.jam === jamFilter; });
+    return ContentService.createTextOutput(JSON.stringify(resps)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService.createTextOutput('OK');
+}</div>
+        </div>
+
+        <div class="setup-card">
+          <h3>Step 3 — Deploy and connect</h3>
+          <p>Click <strong>Deploy → New deployment</strong>. Type: <strong>Web app</strong>. Execute as: <strong>Me</strong>. Who has access: <strong>Anyone</strong>. Click Deploy and copy the URL it gives you.</p>
+          <div class="field-wrap" style="margin-bottom:12px">
+            <label class="field-label">Paste your Apps Script web app URL here</label>
+            <input type="url" id="sheets-url" class="a-input" placeholder="https://script.google.com/macros/s/…/exec">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="save-btn" style="padding:9px 20px;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:inherit;border:none" onclick="saveSheetUrl()">Save and test</button>
+            <button class="cancel-btn" style="padding:9px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:inherit;background:transparent;border:1.5px solid var(--border);color:var(--muted)" onclick="clearSheetUrl()">Disconnect</button>
+          </div>
+          <div id="setup-test-result" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+        </div>
+
+        <div class="setup-card">
+          <h3>Change admin passphrase</h3>
+          <p>Default is <code style="background:var(--border);padding:1px 5px;border-radius:3px">bluesjam2026</code> — change it before sharing the admin URL.</p>
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="field-wrap"><label>New passphrase</label><input type="password" id="new-pw1" class="a-input" placeholder="Min 6 characters"></div>
+            <div class="field-wrap"><label>Confirm</label><input type="password" id="new-pw2" class="a-input" placeholder="Repeat passphrase"></div>
+          </div>
+          <button class="save-btn" style="padding:9px 20px;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:inherit;border:none" onclick="changePass()">Update passphrase</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const PW_KEY      = 'sbs-admin-pw';
+const URL_KEY     = 'sbs-sheets-url';
+const JAMS_KEY    = 'sbs-jams-cache';
+const RESPS_KEY   = 'sbs-responses-cache';
+const AUTH_KEY    = 'sbs-admin-auth';
+const DEFAULT_PW  = 'bluesjam2026';
+
+const POS_TAGS = ['Great host','Good vibe','Welcoming to new players','Good sound','Strong crowd','Well organised','Great venue','Good mix of musicians','Fun atmosphere','Great setlist variety'];
+const NEG_TAGS = ['Better sound needed','More players welcome','Shorter wait times','More variety','Friendlier to beginners','Better communication','Venue atmosphere','Start/finish times','Better signage','More seating'];
+const STAR_LABELS = ['','Poor','Below average','Pretty good','Really good','Fantastic!'];
+
+const DEFAULT_JAMS = [
+  { id:'jam-001', name:'Fridayz at the Nag', venue:'Nags Head Hotel', type:'regular', schedule:'Every Friday' },
+  { id:'jam-002', name:'Sunday Session',     venue:'Bridge Hotel',    type:'regular', schedule:'Every Sunday' },
+];
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function getUrl()   { return localStorage.getItem(URL_KEY) || ''; }
+function getPw()    { return localStorage.getItem(PW_KEY)  || DEFAULT_PW; }
+
+async function sheetsGet(params) {
+  const url = getUrl();
+  if (!url) return null;
+  const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
+  const r = await fetch(`${url}?${qs}`);
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+
+async function sheetsPost(type, data) {
+  const url = getUrl();
+  if (!url) return false;
+  const r = await fetch(`${url}?type=${type}`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ═══════════════════════════════════════════
+// ROUTING — direct show/hide, no hash dependency
+// ═══════════════════════════════════════════
+function showAdmin() {
+  document.getElementById('view-feedback').style.display = 'none';
+  document.getElementById('view-admin').style.display    = 'block';
+  initAdmin();
+}
+function showFeedback() {
+  document.getElementById('view-admin').style.display    = 'none';
+  document.getElementById('view-feedback').style.display = 'flex';
+  initFeedback();
+}
+function route() {
+  if (location.hash === '#admin') { showAdmin(); } else { showFeedback(); }
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('DOMContentLoaded', route);
+
+// ═══════════════════════════════════════════
+// FEEDBACK FORM
+// ═══════════════════════════════════════════
+let fb = { jamId:null, jamName:null, rating:0, role:null, positive:[], negative:[], posText:'', negText:'' };
+let jamsCache = [];
+
+async function initFeedback() {
+  // load tags
+  document.getElementById('tags-positive').innerHTML =
+    POS_TAGS.map(t=>`<div class="tag" onclick="togTag(this,'pos','${t}')">${t}</div>`).join('');
+  document.getElementById('tags-negative').innerHTML =
+    NEG_TAGS.map(t=>`<div class="tag neg" onclick="togTag(this,'neg','${t}')">${t}</div>`).join('');
+
+  // Always render defaults/cache immediately so form is never stuck
+  const cached = JSON.parse(localStorage.getItem(JAMS_KEY) || 'null');
+  jamsCache = cached && cached.length ? cached : DEFAULT_JAMS;
+  renderJamPicker(jamsCache);
+
+  // Then try to refresh from Sheets in background
+  const url = getUrl();
+  if (url) {
+    sheetsGet({ type:'jams' }).then(fromSheets => {
+      if (fromSheets && fromSheets.length) {
+        jamsCache = fromSheets;
+        localStorage.setItem(JAMS_KEY, JSON.stringify(jamsCache));
+        renderJamPicker(jamsCache);
+        applyJamParam();
+      }
+    }).catch(() => { /* keep showing cached/defaults */ });
+  }
+
+  // pre-select from ?jam= param — runs after jams are rendered
+  applyJamParam();
+}
+
+function applyJamParam() {
+  const jamParam = new URLSearchParams(location.search).get('jam');
+  if (!jamParam) return;
+  const j = jamsCache.find(x=>x.id===jamParam);
+  if (j) {
+    fb.jamId = j.id;
+    fb.jamName = j.name;
+    // skip straight to rating screen
+    setScreen(2);
+  }
+}
+
+function renderJamPicker(jams) {
+  const el = document.getElementById('jam-picker');
+  if (!jams.length) { el.innerHTML='<div class="loading-msg" style="grid-column:span 2">No jams found. Ask your organiser for the direct link.</div>'; return; }
+  el.innerHTML = jams.map(j=>`
+    <div class="jam-btn" data-id="${j.id}" onclick="pickJam('${j.id}','${j.name}',this)">
+      <div class="jname">${j.name}</div>
+      <div class="jvenue">${j.venue}</div>
+      <span class="jtag ${j.type==='one-off'?'one-off':''}">${j.type==='one-off'?'One-off':'Regular'}</span>
+    </div>`).join('');
+}
+
+function pickJam(id, name, el) {
+  document.querySelectorAll('.jam-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  fb.jamId=id; fb.jamName=name;
+}
+function fbStar(v) {
+  fb.rating=v;
+  document.querySelectorAll('.star').forEach(s=>s.classList.toggle('on',+s.dataset.v<=v));
+  document.getElementById('fb-star-label').textContent = STAR_LABELS[v]||'';
+}
+function fbRole(el,role) {
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel'); fb.role=role;
+}
+function togTag(el,side,val) {
+  el.classList.toggle('sel');
+  const arr = side==='pos' ? fb.positive : fb.negative;
+  const i = arr.indexOf(val);
+  i>=0 ? arr.splice(i,1) : arr.push(val);
+}
+function fbGo(n) { setScreen(n); }
+function fbNext(to) {
+  if (to===2 && !fb.jamId) { showToast('Please select a jam first'); return; }
+  setScreen(to);
+}
+function setScreen(n) {
+  document.querySelectorAll('#view-feedback .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('fb-s'+n).classList.add('active');
+  document.getElementById('fb-progress').style.width=(n*20)+'%';
+  window.scrollTo(0,0);
+}
+
+async function fbSubmit() {
+  fb.posText  = document.getElementById('fb-pos-text').value.trim();
+  fb.negText  = document.getElementById('fb-neg-text').value.trim();
+  const btn   = document.getElementById('submit-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+
+  const payload = {
+    timestamp:      new Date().toISOString(),
+    jam:            fb.jamName || 'Unknown',
+    role:           fb.role    || '',
+    rating:         fb.rating  || 0,
+    whatWorked:     fb.positive.join(', '),
+    toImprove:      fb.negative.join(', '),
+    commentGood:    fb.posText,
+    commentImprove: fb.negText
+  };
+
+  // cache locally
+  const cache = JSON.parse(localStorage.getItem(RESPS_KEY)||'[]');
+  cache.push(payload);
+  localStorage.setItem(RESPS_KEY, JSON.stringify(cache));
+
+  // send to Sheets
+  if (getUrl()) {
+    try { await sheetsPost('response', payload); } catch(e) { console.warn('Sheets send failed, cached locally'); }
+  }
+
+  setScreen(5);
+}
+
+// ═══════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════
+function adminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === getPw()) {
+    localStorage.setItem(AUTH_KEY,'1');
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    loadAdminData();
+  } else {
+    document.getElementById('login-err').textContent='Incorrect passphrase';
+  }
+}
+function adminLogout() {
+  localStorage.removeItem(AUTH_KEY);
+  document.getElementById('admin-login').style.display='flex';
+  document.getElementById('admin-panel').style.display='none';
+  document.getElementById('admin-pw').value='';
+  showFeedback();
+}
+function initAdmin() {
+  if (localStorage.getItem(AUTH_KEY)==='1') {
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    loadAdminData();
+  }
+}
+function adminTab(name,btn) {
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.admin-nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name==='setup') { updateSetupStatus(); document.getElementById('sheets-url').value=getUrl(); }
+  if (name==='reports') renderReport();
+  if (name==='responses') renderResponses();
+}
+
+async function loadAdminData() {
+  updateSetupStatus();
+  // load jams
+  const cached = JSON.parse(localStorage.getItem(JAMS_KEY)||'null') || DEFAULT_JAMS;
+  jamsCache = cached;
+  renderAdminJams();
+  populateJamFilters();
+  renderOverallStats();
+
+  if (getUrl()) {
+    try {
+      const fromSheets = await sheetsGet({type:'jams'});
+      if (fromSheets) {
+        jamsCache = fromSheets.length ? fromSheets : cached;
+        localStorage.setItem(JAMS_KEY, JSON.stringify(jamsCache));
+        renderAdminJams();
+        populateJamFilters();
+        renderOverallStats();
+      }
+    } catch(e) {}
+  }
+}
+
+// ── JAM MANAGEMENT ──
+function toggleAddForm() {
+  const p = document.getElementById('add-jam-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+function renderAdminJams() {
+  const el = document.getElementById('admin-jam-list');
+  if (!jamsCache.length) { el.innerHTML='<div class="empty-state"><div class="ei">🎸</div><p>No jams yet.</p></div>'; return; }
+  el.innerHTML = jamsCache.map(j=>{
+    const link = `${location.origin}${location.pathname}?jam=${j.id}`;
+    return `<div class="jam-admin-card">
+      <div>
+        <div class="jac-name">${j.name}<span class="jtype-badge ${j.type==='one-off'?'one-off':''}">${j.type==='one-off'?'One-off':'Regular'}</span></div>
+        <div class="jac-meta">${j.venue} · ${j.schedule||''} · <a href="${link}" target="_blank" style="color:var(--gold)">QR link ↗</a></div>
+      </div>
+      <div class="jam-actions">
+        <button onclick="copyLink('${link}')">Copy link</button>
+        <button class="del-btn" onclick="deleteJam('${j.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function saveJam() {
+  const name     = document.getElementById('new-name').value.trim();
+  const venue    = document.getElementById('new-venue').value.trim();
+  const type     = document.getElementById('new-type').value;
+  const schedule = document.getElementById('new-schedule').value.trim();
+  if (!name||!venue) { showToast('Name and venue are required'); return; }
+  const jam = { id:'jam-'+Date.now(), name, venue, type, schedule };
+  jamsCache.push(jam);
+  localStorage.setItem(JAMS_KEY, JSON.stringify(jamsCache));
+  if (getUrl()) { try { await sheetsPost('saveJam', jam); } catch(e){} }
+  renderAdminJams();
+  populateJamFilters();
+  toggleAddForm();
+  ['new-name','new-venue','new-schedule'].forEach(id=>document.getElementById(id).value='');
+  showToast('Jam added ✓');
+}
+async function deleteJam(id) {
+  if (!confirm('Delete this jam? Historical responses are kept in Sheets.')) return;
+  jamsCache = jamsCache.filter(j=>j.id!==id);
+  localStorage.setItem(JAMS_KEY, JSON.stringify(jamsCache));
+  if (getUrl()) { try { await sheetsPost('deleteJam',{id}); } catch(e){} }
+  renderAdminJams();
+  populateJamFilters();
+  showToast('Jam removed');
+}
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(()=>showToast('Link copied ✓')).catch(()=>prompt('Copy this link:',url));
+}
+function populateJamFilters() {
+  const opts = '<option value="all">All jams</option>'+jamsCache.map(j=>`<option value="${j.name}">${j.name}</option>`).join('');
+  document.getElementById('rpt-jam').innerHTML = opts;
+  document.getElementById('resp-jam').innerHTML = opts;
+}
+
+// ── STATS + REPORTS ──
+async function getResponses(jamFilter, days) {
+  let resps = [];
+  if (getUrl()) {
+    try {
+      resps = await sheetsGet({type:'responses', jam: jamFilter||'all'}) || [];
+    } catch(e) {
+      resps = JSON.parse(localStorage.getItem(RESPS_KEY)||'[]');
+      if (jamFilter && jamFilter!=='all') resps = resps.filter(r=>r.jam===jamFilter);
+    }
+  } else {
+    resps = JSON.parse(localStorage.getItem(RESPS_KEY)||'[]');
+    if (jamFilter && jamFilter!=='all') resps = resps.filter(r=>r.jam===jamFilter);
+  }
+  if (days && days!=='all') {
+    const cutoff = Date.now() - (+days)*86400000;
+    resps = resps.filter(r=>new Date(r.timestamp).getTime()>cutoff);
+  }
+  return resps;
+}
+
+async function renderOverallStats() {
+  const all = await getResponses('all','all');
+  const ratings = all.filter(r=>r.rating>0).map(r=>+r.rating);
+  const avg = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : '—';
+  document.getElementById('overall-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${all.length}</div><div class="stat-label">Total responses</div></div>
+    <div class="stat-card"><div class="stat-num">${jamsCache.length}</div><div class="stat-label">Active jams</div></div>
+    <div class="stat-card"><div class="stat-num">${avg}</div><div class="stat-label">Avg rating / 5</div></div>`;
+}
+
+async function renderReport() {
+  const jamFilter = document.getElementById('rpt-jam')?.value || 'all';
+  const days      = document.getElementById('rpt-period')?.value || 'all';
+  const resps     = await getResponses(jamFilter, days);
+  const el        = document.getElementById('report-output');
+  if (!el) return;
+  if (!resps.length) { el.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No responses yet for this selection.</p></div>'; return; }
+
+  const ratings = resps.filter(r=>r.rating>0).map(r=>+r.rating);
+  const avg     = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length) : 0;
+
+  const roles = {Jammer:0,Audience:0,Both:0};
+  resps.forEach(r=>{ if(roles[r.role]!==undefined) roles[r.role]++; });
+
+  const posCounts={}, negCounts={};
+  resps.forEach(r=>{
+    (r.whatWorked||'').split(', ').filter(Boolean).forEach(t=>posCounts[t]=(posCounts[t]||0)+1);
+    (r.toImprove||'').split(', ').filter(Boolean).forEach(t=>negCounts[t]=(negCounts[t]||0)+1);
+  });
+  const posTop = Object.entries(posCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const negTop = Object.entries(negCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxPos = posTop.length ? posTop[0][1] : 1;
+  const maxNeg = negTop.length ? negTop[0][1] : 1;
+
+  const comments = resps.filter(r=>r.commentGood||r.commentImprove).slice(-6).reverse();
+  const starsHtml = [1,2,3,4,5].map(i=>`<span class="s ${i<=Math.round(avg)?'on':''}">★</span>`).join('');
+
+  el.innerHTML = `<div class="report-card">
+    <h3>${jamFilter==='all'?'All jams':jamFilter}</h3>
+    <div class="report-meta">${resps.length} response${resps.length!==1?'s':''}</div>
+    <div class="stars-display">${starsHtml}<span class="avg-num">${avg.toFixed(1)}</span><span class="avg-count">/ 5 avg</span></div>
+    <div class="role-chips">
+      <div class="role-chip"><div class="rc-num">${roles.Jammer}</div><div class="rc-label">Jammers</div></div>
+      <div class="role-chip"><div class="rc-num">${roles.Audience}</div><div class="rc-label">Audience</div></div>
+      <div class="role-chip"><div class="rc-num">${roles.Both}</div><div class="rc-label">Both</div></div>
+    </div>
+    ${posTop.length?`<div class="bar-section"><h4>What's working well</h4>${posTop.map(([t,n])=>`<div class="bar-item"><span class="bar-label">${t}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxPos*100)}%"></div></div><span class="bar-count">${n}</span></div>`).join('')}</div>`:''}
+    ${negTop.length?`<div class="bar-section"><h4>Areas to improve</h4>${negTop.map(([t,n])=>`<div class="bar-item"><span class="bar-label">${t}</span><div class="bar-track"><div class="bar-fill neg" style="width:${Math.round(n/maxNeg*100)}%"></div></div><span class="bar-count">${n}</span></div>`).join('')}</div>`:''}
+    ${comments.length?`<div class="bar-section"><h4>Recent comments</h4><div class="comment-list">${comments.map(r=>[r.commentGood?`<div class="comment-item">✓ ${r.commentGood}</div>`:'',r.commentImprove?`<div class="comment-item" style="border-color:var(--rust)">↑ ${r.commentImprove}</div>`:''].join('')).join('')}</div></div>`:''}
+  </div>`;
+}
+
+async function renderResponses() {
+  const jamFilter = document.getElementById('resp-jam')?.value || 'all';
+  const resps     = await getResponses(jamFilter,'all');
+  const el        = document.getElementById('responses-output');
+  if (!el) return;
+  if (!resps.length) { el.innerHTML='<div class="empty-state"><div class="ei">📋</div><p>No responses yet.</p></div>'; return; }
+  const sorted = [...resps].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  el.innerHTML = `<div class="resp-table-wrap"><table>
+    <thead><tr><th>Date</th><th>Jam</th><th>Rating</th><th>Role</th><th>What worked</th><th>To improve</th></tr></thead>
+    <tbody>${sorted.map(r=>`<tr>
+      <td>${new Date(r.timestamp).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td>
+      <td>${r.jam||'—'}</td>
+      <td><span class="star-inline">${'★'.repeat(+r.rating||0)}</span></td>
+      <td>${r.role||'—'}</td>
+      <td style="font-size:12px;max-width:180px">${(r.whatWorked||'').split(', ').filter(Boolean).map(t=>`<span style="background:var(--warm);border-radius:3px;padding:1px 5px;margin:1px;display:inline-block">${t}</span>`).join('')}${r.commentGood?`<div style="color:var(--muted);margin-top:3px">${r.commentGood.slice(0,60)}…</div>`:''}</td>
+      <td style="font-size:12px;max-width:180px">${(r.toImprove||'').split(', ').filter(Boolean).map(t=>`<span style="background:#F5EAE0;border-radius:3px;padding:1px 5px;margin:1px;display:inline-block;color:var(--rust)">${t}</span>`).join('')}${r.commentImprove?`<div style="color:var(--muted);margin-top:3px">${r.commentImprove.slice(0,60)}…</div>`:''}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ── SETUP ──
+function updateSetupStatus() {
+  const el = document.getElementById('setup-status');
+  if (!el) return;
+  const url = getUrl();
+  el.innerHTML = url
+    ? `<div class="status-banner status-ok">✓ Connected — responses saving to Google Sheets</div>`
+    : `<div class="status-banner status-warn">⚠ Not connected — responses saved locally only. Complete setup below.</div>`;
+}
+
+async function saveSheetUrl() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (!url) { showToast('Please paste your Apps Script URL'); return; }
+  localStorage.setItem(URL_KEY, url);
+  const res = document.getElementById('setup-test-result');
+  res.style.color='var(--muted)'; res.textContent='Testing…';
+  try {
+    const data = await sheetsGet({type:'jams'});
+    res.style.color='var(--success)';
+    res.textContent='✓ Connected! Jam list and responses will sync to Google Sheets.';
+    updateSetupStatus();
+    loadAdminData();
+  } catch(e) {
+    res.style.color='var(--danger)';
+    res.textContent='✗ Could not connect. Check the URL and make sure the deployment is set to "Anyone can access".';
+  }
+}
+function clearSheetUrl() {
+  if (!confirm('Disconnect Google Sheets? Local data is kept.')) return;
+  localStorage.removeItem(URL_KEY);
+  document.getElementById('sheets-url').value='';
+  document.getElementById('setup-test-result').textContent='';
+  updateSetupStatus();
+  showToast('Disconnected');
+}
+function changePass() {
+  const p1=document.getElementById('new-pw1').value;
+  const p2=document.getElementById('new-pw2').value;
+  if (!p1) { showToast('Enter a passphrase'); return; }
+  if (p1!==p2) { showToast('Passphrases do not match'); return; }
+  if (p1.length<6) { showToast('Use at least 6 characters'); return; }
+  localStorage.setItem(PW_KEY,p1);
+  document.getElementById('new-pw1').value='';
+  document.getElementById('new-pw2').value='';
+  showToast('Passphrase updated ✓');
+}
+</script>
+</body>
+</html>
