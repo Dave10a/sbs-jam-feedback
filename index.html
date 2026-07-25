@@ -632,6 +632,7 @@ const JAMS_KEY    = 'sbs-jams-cache';
 const RESPS_KEY   = 'sbs-responses-cache';
 const AUTH_KEY    = 'sbs-admin-auth';
 const DEFAULT_PW  = 'bluesjam2026';
+const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbx7uhuM3MH8GfXdA6K9l5jmVVyXXxeZoQYFdHP9mox8OeQGm4TuGnz5UpkP4IrEkQzI4g/exec';
 
 const POS_TAGS = ['Great host','Good vibe','Welcoming to new players','Good sound','Strong crowd','Well organised','Great venue','Good mix of musicians','Fun atmosphere','Great setlist variety'];
 const NEG_TAGS = ['Better sound needed','More players welcome','Shorter wait times','More variety','Friendlier to beginners','Better communication','Venue atmosphere','Start/finish times','Better signage','More seating'];
@@ -645,7 +646,7 @@ const DEFAULT_JAMS = [
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
-function getUrl()   { return localStorage.getItem(URL_KEY) || ''; }
+function getUrl()   { return localStorage.getItem(URL_KEY) || SHEETS_URL; }
 function getPw()    { return localStorage.getItem(PW_KEY)  || DEFAULT_PW; }
 
 async function sheetsGet(params) {
